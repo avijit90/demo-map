@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+  ai:
+    mcp:
+      server:
+        name: simple-poc
+        version: 0.0.1
+        type: SYNC
