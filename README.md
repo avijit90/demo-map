@@ -1,120 +1,61 @@
 # Java MCP Server POC
 
-A minimal Spring Boot MCP (Model Context Protocol) server exposing demo tools via HTTP/SSE transport.
+A minimal Spring Boot MCP (Model Context Protocol) server that works with Claude Code.
+
+**Tech Stack:** Spring Boot 3.4.1 + Spring AI 1.1.2 (WebMVC/Tomcat)
+
+## Quick Start
+
+```bash
+# Build
+mvn clean package -DskipTests
+
+# Run
+mvn spring-boot:run
+
+# Connect to Claude Code
+claude mcp add --transport sse simple-poc http://localhost:8080/sse
+```
+
+## Demo Tools
+
+1. **greet** - Greets a person by name
+2. **addNumbers** - Adds two numbers
+3. **getCurrentTime** - Returns server time
+4. **reverseString** - Reverses text
 
 ## Project Structure
 
 ```
-mcp-server-poc/
-├── pom.xml
-├── src/main/java/com/example/mcppoc/
-│   ├── McpServerPocApplication.java
-│   ├── config/
-│   │   ├── McpConfig.java
-│   │   └── CorsConfig.java
-│   └── tools/
-│       └── DemoTools.java
-└── src/main/resources/
-    └── application.yml
+src/main/java/com/example/mcppoc/
+├── McpServerPocApplication.java    # Main app
+├── tools/DemoTools.java            # 4 demo tools with @Tool
+└── config/
+    ├── McpConfig.java              # Tool registration
+    └── CorsConfig.java             # CORS setup
+
+src/main/resources/
+└── application.yml                  # Server config
 ```
-
-## Requirements
-
-- Java 17+
-- Maven 3.6+
-
-## Build
-
-```bash
-mvn clean package -DskipTests
-```
-
-## Run
-
-```bash
-mvn spring-boot:run
-```
-
-The server will start on `http://localhost:8080`
-
-## MCP Tools Exposed
-
-1. **greet** - Greets a person by name
-   - Input: `name` (string)
-   - Example: "Hello, Avi! Welcome to the MCP server."
-
-2. **addNumbers** - Adds two numbers together
-   - Input: `a` (int), `b` (int)
-   - Example: 42 + 17 = 59
-
-3. **getCurrentTime** - Returns the current server time
-   - Input: none
-   - Example: "Current server time: Tuesday, January 14, 2026 at 11:05:55 PM"
-
-4. **reverseString** - Reverses a text string
-   - Input: `text` (string)
-   - Example: "Hello World" → "dlroW olleH"
-
-## Connect to Claude Code
-
-### Add the MCP Server
-
-With the server running, execute:
-
-```bash
-claude mcp add --transport sse simple-poc http://localhost:8080/sse
-```
-
-### Verify Connection
-
-```bash
-claude
-> /mcp
-```
-
-You should see the `simple-poc` server listed with 4 tools.
-
-### Test the Tools
-
-#### Test greet
-```
-Use simple-poc to greet Avi
-```
-
-#### Test addNumbers
-```
-Use simple-poc to add 42 and 17
-```
-
-#### Test getCurrentTime
-```
-Use simple-poc to get the current time
-```
-
-#### Test reverseString
-```
-Use simple-poc to reverse the string 'Hello World'
-```
-
-## Technical Details
-
-- **Framework**: Spring Boot 3.4.1
-- **MCP Library**: Spring AI MCP WebFlux 1.0.0-M6
-- **Transport**: SSE (Server-Sent Events) over HTTP
-- **SSE Endpoint**: `/sse`
-- **Message Endpoint**: `/mcp/message`
 
 ## Configuration
 
-The MCP server is configured in `src/main/resources/application.yml`:
+**pom.xml:**
+```xml
+<spring-ai.version>1.1.2</spring-ai.version>
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+</dependency>
+```
 
+**application.yml:**
 ```yaml
 server:
   port: 8080
-
 spring:
   main:
-    web-application-type: reactive
+    web-application-type: servlet  # WebMVC (Tomcat)
   ai:
     mcp:
       server:
@@ -123,19 +64,42 @@ spring:
         type: SYNC
 ```
 
-## Testing the SSE Endpoint
+## WebMVC vs WebFlux
 
-```bash
-curl -v http://localhost:8080/sse
-```
+This project uses **WebMVC** (servlet/Tomcat). Both work with Claude Code:
 
-Expected response:
-- HTTP 200 OK
-- Content-Type: text/event-stream
-- Initial event: `event:endpoint` with `data:/mcp/message`
+| | WebMVC | WebFlux |
+|---|---|---|
+| **Artifact** | `spring-ai-starter-mcp-server-webmvc` | `spring-ai-starter-mcp-server-webflux` |
+| **Server** | Tomcat (servlet) | Netty (reactive) |
+| **Type** | `servlet` | `reactive` |
+| **CORS** | `WebMvcConfigurer` | `CorsWebFilter` |
+| **Use When** | Traditional apps, simpler | High concurrency, reactive |
 
-## Sources
+To switch: Change artifact, `web-application-type`, and CORS config.
 
-- [Spring AI MCP Server Boot Starter](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-server-boot-starter-docs.html)
-- [STDIO and SSE MCP Servers - Spring AI](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-stdio-sse-server-boot-starter-docs.html)
-- [Maven Repository: spring-ai-mcp-server-webflux-spring-boot-starter](https://mvnrepository.com/artifact/org.springframework.ai/spring-ai-mcp-server-webflux-spring-boot-starter/1.0.0-M6)
+## Migrating Old Servers?
+
+See **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - comprehensive guide for upgrading broken MCP servers to Spring AI 1.1.2.
+
+## Key Points
+
+- ✅ Uses latest stable Spring AI (1.1.2)
+- ✅ Available in Maven Central (no special repos)
+- ✅ Tested and working with Claude Code
+- ✅ WebMVC implementation (WebFlux also works)
+- ✅ Complete reference code included
+
+## Version Notes
+
+**Artifact naming changed in 1.1.x:**
+- Old (1.0.0-M6): `spring-ai-mcp-server-webmvc-spring-boot-starter`
+- New (1.1.2): `spring-ai-starter-mcp-server-webmvc`
+
+If upgrading, just update artifact name and version - no code changes needed!
+
+## Resources
+
+- [Spring AI Docs](https://docs.spring.io/spring-ai/reference/)
+- [Spring AI 1.1 Release](https://spring.io/blog/2025/11/12/spring-ai-1-1-GA-released/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
