@@ -22,10 +22,14 @@ If you just want to upgrade quickly:
 ```
 
 ```yaml
-# application.yml: Ensure web type is set
+# application.yml: Ensure web type is set and protocol
 spring:
   main:
     web-application-type: servlet  # or reactive for webflux
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE  # Use STREAMABLE for HTTP, SSE for Server-Sent Events
 ```
 
 Build and run. No code changes needed!
@@ -131,6 +135,7 @@ spring:
         name: your-server-name
         version: 0.0.1
         type: SYNC
+        protocol: STREAMABLE  # Use STREAMABLE for HTTP, SSE for Server-Sent Events (default)
 ```
 
 ---
@@ -244,16 +249,16 @@ mvn spring-boot:run
 - WebFlux: `Netty started on port 8080`
 - Both: `Registered tools: X`
 
-**Test SSE endpoint:**
+**Test HTTP endpoint:**
 ```bash
-curl -v http://localhost:8080/sse
+curl -v http://localhost:8080/mcp
 ```
 
-Expected: `HTTP 200`, `Content-Type: text/event-stream`
+Expected: `HTTP 200`, streamable HTTP connection
 
 **Connect to Claude Code:**
 ```bash
-claude mcp add --transport sse your-server-name http://localhost:8080/sse
+claude mcp add --transport http your-server-name http://localhost:8080/mcp
 ```
 
 **Verify in Claude Code:**
@@ -283,9 +288,9 @@ Should list your server with tools.
 **Cause:** Missing `@Service` or no `ToolCallbackProvider` bean
 **Fix:** Ensure tool class has `@Service` and config creates bean
 
-### Issue: SSE endpoint 404
-**Cause:** Wrong dependency or config
-**Fix:** Verify correct starter artifact for WebMVC vs WebFlux
+### Issue: HTTP endpoint 404
+**Cause:** Wrong dependency or streamable-http config
+**Fix:** Verify correct starter artifact for WebMVC vs WebFlux and ensure streamable-http is enabled in application.yml
 
 ---
 
@@ -313,10 +318,11 @@ After migration:
 - [ ] Tool class has `@Service`
 - [ ] ToolCallbackProvider bean exists
 - [ ] CORS config matches stack (WebMVC vs WebFlux)
+- [ ] Protocol is set in application.yml (STREAMABLE for HTTP, SSE for Server-Sent Events)
 - [ ] `mvn clean package` succeeds
 - [ ] Server starts (Tomcat or Netty)
-- [ ] curl `/sse` returns text/event-stream
-- [ ] `claude mcp add` succeeds
+- [ ] curl `/mcp` returns HTTP 400/500 (expected without proper MCP request)
+- [ ] `claude mcp add --transport http` succeeds
 - [ ] `/mcp` shows server and tools
 - [ ] Tools are invocable
 

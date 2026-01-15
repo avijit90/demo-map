@@ -10,3 +10,4 @@ spring:
         name: simple-poc
         version: 0.0.1
         type: SYNC
+        protocol: STREAMABLE

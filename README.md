@@ -14,7 +14,7 @@ mvn clean package -DskipTests
 mvn spring-boot:run
 
 # Connect to Claude Code
-claude mcp add --transport sse simple-poc http://localhost:8080/sse
+claude mcp add --transport http simple-poc http://localhost:8080/mcp
 ```
 
 ## Demo Tools
@@ -62,6 +62,7 @@ spring:
         name: simple-poc
         version: 0.0.1
         type: SYNC
+        protocol: STREAMABLE  # Use STREAMABLE for HTTP, SSE for Server-Sent Events
 ```
 
 ## WebMVC vs WebFlux
